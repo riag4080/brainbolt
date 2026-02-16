@@ -1,0 +1,70 @@
+================================
+BRAINBOLT - WINDOWS QUICK START
+================================
+
+1. INSTALL DOCKER DESKTOP
+   Download: https://www.docker.com/products/docker-desktop/
+   Install and start it (whale icon in system tray)
+
+2. OPEN POWERSHELL
+   Press Windows key, type "PowerShell", hit Enter
+
+3. GO TO PROJECT FOLDER
+   cd C:\path\to\brainbolt-quiz
+   (Replace with your actual path)
+
+4. RUN THE PROJECT
+   docker-compose up --build
+
+5. WAIT 30-60 SECONDS
+   Let containers start up
+
+6. OPEN BROWSER
+   Go to: http://localhost:3000
+
+7. REGISTER & PLAY
+   - Click Register
+   - Fill in details
+   - Start quiz!
+
+================================
+STOP THE PROJECT
+================================
+Press Ctrl+C in PowerShell
+OR
+Open new PowerShell:
+   cd C:\path\to\brainbolt-quiz
+   docker-compose down
+
+================================
+TROUBLESHOOTING
+================================
+"Docker is not running"
+→ Start Docker Desktop, wait for whale icon
+
+"Port already in use"
+→ Close other apps using ports 3000, 3001
+
+"WSL error"
+→ Open PowerShell as Admin
+→ Run: wsl --update
+
+================================
+DEMO VIDEO
+================================
+You still need to record demo video!
+See: DEMO_VIDEO_GUIDE.md
+
+================================
+SUBMISSION
+================================
+1. Upload to GitHub
+2. Record demo video
+3. Add video link to README
+4. Submit repo + video link
+
+================================
+HELP
+================================
+See: README_WINDOWS.md for details
+See: README.md for full docs
