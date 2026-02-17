@@ -11,7 +11,7 @@
 
 export interface UserState {
   userId: string;
-  currentDifficulty: number;
+  currentDifficulty:  number;
   streak: number;
   maxStreak: number;
   totalScore: number;
