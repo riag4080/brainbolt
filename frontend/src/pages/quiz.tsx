@@ -6,7 +6,7 @@ import { Question, AnswerResponse } from '@/types';
 
 export default function Quiz() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const [question, setQuestion] = useState<Question | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -61,19 +61,32 @@ export default function Quiz() {
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark-bg dark:to-dark-surface py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Navigation Bar */}
-        <div className="mb-6 flex gap-4">
-          <button
-            onClick={() => router.push('/leaderboard')}
-            className="px-4 py-2 bg-white dark:bg-dark-surface rounded-lg shadow hover:shadow-md transition-shadow font-semibold"
-          >
-            🏆 Leaderboard
-          </button>
-          <button
-            onClick={() => router.push('/metrics')}
-            className="px-4 py-2 bg-white dark:bg-dark-surface rounded-lg shadow hover:shadow-md transition-shadow font-semibold"
-          >
-            📊 My Metrics
-          </button>
+        <div className="mb-6 flex gap-4 items-center justify-between">
+          <div className="flex gap-4">
+            <button
+              onClick={() => router.push('/leaderboard')}
+              className="px-4 py-2 bg-white dark:bg-dark-surface rounded-lg shadow hover:shadow-md transition-shadow font-semibold"
+            >
+              🏆 Leaderboard
+            </button>
+            <button
+              onClick={() => router.push('/metrics')}
+              className="px-4 py-2 bg-white dark:bg-dark-surface rounded-lg shadow hover:shadow-md transition-shadow font-semibold"
+            >
+              📊 My Metrics
+            </button>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="px-3 py-2 bg-white dark:bg-dark-surface rounded-lg shadow text-sm font-medium text-gray-700">
+              👤 {user?.username}
+            </span>
+            <button
+              onClick={() => { logout(); router.push('/login'); }}
+              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow hover:shadow-md transition-all font-semibold"
+            >
+              🚪 Logout
+            </button>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl p-8">
