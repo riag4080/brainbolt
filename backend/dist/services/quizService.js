@@ -108,7 +108,12 @@ async function getNextQuestion(userId, sessionId) {
     if (questions.length === 0) {
         throw new Error('No questions available for current difficulty');
     }
-    const question = questions[Math.floor(Math.random() * questions.length)];
+    // FIX: Exclude last question to prevent same question repeating
+    const filtered = userState.lastQuestionId
+        ? questions.filter(q => q.id !== userState.lastQuestionId)
+        : questions;
+    const pool = filtered.length > 0 ? filtered : questions;
+    const question = pool[Math.floor(Math.random() * pool.length)];
     return {
         question,
         userState,
