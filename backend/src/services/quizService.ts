@@ -200,10 +200,13 @@ export async function submitAnswer(
     const question = questionResult.rows[0];
     const isCorrect = question.correct_answer_hash === answer;
 
+    // FIX: Pass currentState.currentDifficulty (user's level), NOT question.difficulty
+    // question.difficulty can be ±1 of user level (from getDifficultyRange pool)
+    // The adaptive algorithm must update the USER's level, not the question's level
     const adaptiveResult = calculateAdaptiveDifficulty(
       currentState,
       isCorrect,
-      question.difficulty
+      currentState.currentDifficulty   // ← FIXED: was question.difficulty
     );
 
     const newTotalScore = currentState.totalScore + adaptiveResult.scoreDelta;
