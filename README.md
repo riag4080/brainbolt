@@ -2,6 +2,8 @@
 
 An intelligent quiz platform that adapts difficulty in real-time based on your performance, featuring live leaderboards and comprehensive metrics.
 
+Demo Video Link :  https://drive.google.com/file/d/1enUuLit7udSEqNOZODOPEkcCUdvi901N/view?usp=sharing
+
 ## ✨ Features
 
 ### 🎯 Core Features
