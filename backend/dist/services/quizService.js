@@ -132,7 +132,7 @@ async function submitAnswer(userId, sessionId, questionId, answer, stateVersion,
             return {
                 correct: cached.correct,
                 newDifficulty: cached.difficulty,
-                newStreak: cached.streak_at_answer,
+                newStreak: cached.correct ? cached.streak_at_answer + 1 : 0,
                 scoreDelta: parseFloat(cached.score_delta),
                 totalScore: parseFloat(cached.score_delta),
                 stateVersion: stateVersion + 1,
