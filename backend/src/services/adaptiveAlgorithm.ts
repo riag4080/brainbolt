@@ -40,25 +40,27 @@ const CONFIG = {
   MAX_DIFFICULTY: 10,
 
   // Ping-pong prevention: symmetric hysteresis
-  // Need 2 consecutive correct to INCREASE (stabilizer - prevents flip on lucky guess)
-  // Need 2 consecutive wrong to DECREASE (symmetric stabilizer)
+  // Need 2 consecutive correct to INCREASE
+  // Need 2 consecutive wrong to DECREASE
   CORRECT_THRESHOLD: 2,
   WRONG_THRESHOLD: 2,
 
-  // Momentum: accumulates confidence, decays over time
-  MOMENTUM_DECAY: 0.3,           // 30% decay each answer
-  MOMENTUM_GAIN_CORRECT: 1.0,    // +1.0 per correct
-  MOMENTUM_LOSS_WRONG: 1.0,      // -1.0 per wrong (symmetric)
+  // Momentum tuned so that exactly 2 consecutive answers
+  // always crosses the ±1.0 threshold:
+  //   After answer 1: (0 + 1.5) × 0.7 = 1.05  ← just below threshold (no change on 1st)
+  //   After answer 2: (1.05 + 1.5) × 0.7 = 1.785 ← crosses threshold ✅
+  MOMENTUM_DECAY: 0.3,
+  MOMENTUM_GAIN_CORRECT: 1.5,
+  MOMENTUM_LOSS_WRONG: 1.5,
 
-  // Momentum must cross threshold before difficulty changes
   DIFFICULTY_INCREASE_THRESHOLD: 1.0,
   DIFFICULTY_DECREASE_THRESHOLD: -1.0,
 
   // Scoring
   BASE_SCORE_MULTIPLIER: 10,
-  DIFFICULTY_WEIGHT: 1.5,        // score grows super-linearly with difficulty
-  MAX_STREAK_MULTIPLIER: 3.0,    // capped at 3.0x as per assignment
-  STREAK_MULTIPLIER_RATE: 0.1,   // each streak step adds 0.1x
+  DIFFICULTY_WEIGHT: 1.5,
+  MAX_STREAK_MULTIPLIER: 3.0,
+  STREAK_MULTIPLIER_RATE: 0.1,
 };
 
 /**
