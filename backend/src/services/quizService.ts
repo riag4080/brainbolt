@@ -152,18 +152,26 @@ export async function submitAnswer(
     );
 
     if (idempotencyCheck.rows.length > 0) {
+      // FIX: Return actual totalScore from user_state, not just scoreDelta
       const cached = idempotencyCheck.rows[0];
       await client.query('COMMIT');
-      
+
+      const currentStateResult = await query(
+        `SELECT total_score, state_version FROM user_state WHERE user_id = $1`,
+        [userId]
+      );
+      const actualTotalScore = parseFloat(currentStateResult.rows[0]?.total_score || '0');
+      const actualStateVersion = parseInt(currentStateResult.rows[0]?.state_version || '0');
+
       const ranks = await getLeaderboardRanks(userId);
-      
+
       return {
         correct: cached.correct,
         newDifficulty: cached.difficulty,
         newStreak: cached.streak_at_answer,
         scoreDelta: parseFloat(cached.score_delta),
-        totalScore: parseFloat(cached.score_delta),
-        stateVersion: stateVersion + 1,
+        totalScore: actualTotalScore,
+        stateVersion: actualStateVersion,
         leaderboardRankScore: ranks.scoreRank,
         leaderboardRankStreak: ranks.streakRank,
       };
@@ -243,7 +251,7 @@ export async function submitAnswer(
         answer,
         isCorrect,
         adaptiveResult.scoreDelta,
-        currentState.streak,
+        adaptiveResult.newStreak,   // FIX: log the new streak (post-answer), not old
         idempotencyKey,
         sessionId,
       ]
@@ -327,9 +335,10 @@ async function getLeaderboardRanks(userId: string): Promise<{
   );
 
   const streakRankResult = await query(
+    // FIX: Rank by current_streak (live leaderboard requirement)
     `SELECT COUNT(*) + 1 as rank
      FROM leaderboard_streak
-     WHERE max_streak > (SELECT max_streak FROM leaderboard_streak WHERE user_id = $1)`,
+     WHERE current_streak > (SELECT current_streak FROM leaderboard_streak WHERE user_id = $1)`,
     [userId]
   );
 
@@ -408,9 +417,13 @@ export async function getLeaderboard(
          FROM leaderboard_score
          ORDER BY total_score DESC
          LIMIT $1`
-      : `SELECT user_id, username, max_streak as score, current_streak
+      // FIX: Assignment requires "current user streak" leaderboard.
+      // Show current_streak as primary score, max_streak as secondary info.
+      // Rank by current_streak DESC (live leaderboard), then max_streak as tiebreak.
+      : `SELECT user_id, username, current_streak as score, max_streak
          FROM leaderboard_streak
-         ORDER BY max_streak DESC
+         WHERE current_streak > 0
+         ORDER BY current_streak DESC, max_streak DESC
          LIMIT $1`;
 
     const result = await query(query_text, [limit]);
