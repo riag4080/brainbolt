@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from './_app';
 import { metricsAPI } from '@/lib/api';
 
 interface UserMetrics {
@@ -18,6 +19,7 @@ interface UserMetrics {
 export default function Metrics() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [metrics, setMetrics] = useState<UserMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -64,12 +66,21 @@ export default function Metrics() {
               🏆 Leaderboard
             </button>
           </div>
-          <button
-            onClick={() => { logout(); router.push('/login'); }}
-            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow font-semibold"
-          >
-            🚪 Logout
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              className="px-3 py-2 bg-white dark:bg-dark-surface rounded-lg shadow hover:shadow-md transition-all text-xl"
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDark ? '☀️' : '🌙'}
+            </button>
+            <button
+              onClick={() => { logout(); router.push('/login'); }}
+              className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow font-semibold"
+            >
+              🚪 Logout
+            </button>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-dark-surface rounded-2xl shadow-xl p-8">
