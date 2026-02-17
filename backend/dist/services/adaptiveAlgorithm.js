@@ -1,168 +1,113 @@
 "use strict";
-/**
- * Adaptive Quiz Algorithm with Ping-Pong Prevention
- *
- * This implements a sophisticated adaptive difficulty system that prevents
- * rapid oscillation between difficulty levels (ping-pong effect).
- *
- * Key Features:
- * 1. Momentum-based difficulty adjustment
- * 2. Hysteresis band to prevent rapid changes
- * 3. Consecutive answer tracking
- * 4. Streak-based confidence scoring
- *
- * Edge Cases Handled:
- * - Ping-pong instability (alternating correct/wrong)
- * - Boundary conditions (difficulty 1 and 10)
- * - Streak reset on wrong answer
- * - Difficulty momentum decay
- * - Cold start (new users)
- */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.calculateStreakMultiplier = calculateStreakMultiplier;
 exports.calculateScoreDelta = calculateScoreDelta;
 exports.calculateAdaptiveDifficulty = calculateAdaptiveDifficulty;
 exports.shouldDecayStreak = shouldDecayStreak;
 exports.getDifficultyRange = getDifficultyRange;
-// Configuration constants
+
+// FIXED Configuration - correct momentum values
 const CONFIG = {
     MIN_DIFFICULTY: 1,
     MAX_DIFFICULTY: 10,
-    HYSTERESIS_THRESHOLD: 2, // Require 2 consecutive correct to increase difficulty
-    MOMENTUM_DECAY: 0.3, // How much momentum carries over
-    MOMENTUM_GAIN_CORRECT: 0.5, // Momentum gained on correct answer
-    MOMENTUM_LOSS_WRONG: 0.7, // Momentum lost on wrong answer
-    DIFFICULTY_INCREASE_THRESHOLD: 1.0, // Momentum needed to increase difficulty
-    DIFFICULTY_DECREASE_THRESHOLD: -1.0, // Momentum needed to decrease difficulty
-    BASE_SCORE_MULTIPLIER: 10, // Base points per question
-    DIFFICULTY_WEIGHT: 1.5, // How much difficulty affects score
-    MAX_STREAK_MULTIPLIER: 3.0, // Maximum multiplier from streak
-    STREAK_MULTIPLIER_RATE: 0.1, // Streak multiplier increment per streak point
+    HYSTERESIS_THRESHOLD: 2,        // 2 consecutive correct to INCREASE
+    WRONG_THRESHOLD: 1,              // 1 wrong to DECREASE
+    MOMENTUM_DECAY: 0.3,
+    MOMENTUM_GAIN_CORRECT: 1.0,     // FIXED: was 0.5
+    MOMENTUM_LOSS_WRONG: 1.5,       // FIXED: was 0.7
+    DIFFICULTY_INCREASE_THRESHOLD: 1.0,
+    DIFFICULTY_DECREASE_THRESHOLD: -1.0,
+    BASE_SCORE_MULTIPLIER: 10,
+    DIFFICULTY_WEIGHT: 1.5,
+    MAX_STREAK_MULTIPLIER: 3.0,
+    STREAK_MULTIPLIER_RATE: 0.1,
 };
-/**
- * Calculate streak multiplier with cap
- */
+
 function calculateStreakMultiplier(streak) {
     const multiplier = 1 + (streak * CONFIG.STREAK_MULTIPLIER_RATE);
     return Math.min(multiplier, CONFIG.MAX_STREAK_MULTIPLIER);
 }
-/**
- * Calculate score delta based on difficulty, streak, and accuracy
- */
+
 function calculateScoreDelta(difficulty, streak, isCorrect, accuracy) {
-    if (!isCorrect) {
-        return 0; // No points for wrong answers
-    }
-    // Base score weighted by difficulty
+    if (!isCorrect) return 0;
     const difficultyScore = CONFIG.BASE_SCORE_MULTIPLIER * Math.pow(difficulty, CONFIG.DIFFICULTY_WEIGHT);
-    // Streak multiplier
     const streakMultiplier = calculateStreakMultiplier(streak);
-    // Accuracy bonus (small bonus for maintaining high accuracy)
     const accuracyBonus = accuracy > 0.8 ? 1.2 : 1.0;
-    const totalScore = difficultyScore * streakMultiplier * accuracyBonus;
-    return Math.round(totalScore * 100) / 100; // Round to 2 decimal places
+    return Math.round(difficultyScore * streakMultiplier * accuracyBonus * 100) / 100;
 }
-/**
- * Adaptive algorithm to determine next difficulty
- *
- * This is the core adaptive logic that prevents ping-pong oscillation
- * through momentum tracking and hysteresis bands.
- *
- * Pseudocode:
- * 1. Update momentum based on answer correctness
- * 2. Apply momentum decay to prevent over-aggressive changes
- * 3. Check hysteresis threshold (consecutive answers)
- * 4. Only change difficulty if momentum exceeds threshold
- * 5. Clamp difficulty to valid bounds
- * 6. Reset counters appropriately
- */
+
 function calculateAdaptiveDifficulty(currentState, isCorrect, currentDifficulty) {
     let newDifficulty = currentDifficulty;
     let newMomentum = currentState.difficultyMomentum;
     let newConsecutiveCorrect = currentState.consecutiveCorrect;
     let newConsecutiveWrong = currentState.consecutiveWrong;
     let newStreak = currentState.streak;
+
     if (isCorrect) {
-        // Correct answer path
+        // CORRECT ANSWER
         newStreak = currentState.streak + 1;
         newConsecutiveCorrect += 1;
         newConsecutiveWrong = 0;
-        // Increase momentum
-        newMomentum = currentState.difficultyMomentum + CONFIG.MOMENTUM_GAIN_CORRECT;
-        // Check if we should increase difficulty
-        // Requires both momentum threshold AND hysteresis (consecutive correct)
-        if (newMomentum >= CONFIG.DIFFICULTY_INCREASE_THRESHOLD &&
-            newConsecutiveCorrect >= CONFIG.HYSTERESIS_THRESHOLD &&
+
+        // Update momentum + apply decay BEFORE threshold check
+        newMomentum = (currentState.difficultyMomentum + CONFIG.MOMENTUM_GAIN_CORRECT) * (1 - CONFIG.MOMENTUM_DECAY);
+
+        // Increase difficulty: need 2 consecutive correct
+        if (newConsecutiveCorrect >= CONFIG.HYSTERESIS_THRESHOLD &&
+            newMomentum >= CONFIG.DIFFICULTY_INCREASE_THRESHOLD &&
             currentDifficulty < CONFIG.MAX_DIFFICULTY) {
             newDifficulty = currentDifficulty + 1;
-            newMomentum = 0; // Reset momentum after difficulty change
-            newConsecutiveCorrect = 0; // Reset consecutive counter
+            newMomentum = 0;
+            newConsecutiveCorrect = 0;
         }
-    }
-    else {
-        // Wrong answer path
-        newStreak = 0; // Reset streak
+    } else {
+        // WRONG ANSWER
+        newStreak = 0;  // RESET streak immediately
         newConsecutiveWrong += 1;
         newConsecutiveCorrect = 0;
-        // Decrease momentum
-        newMomentum = currentState.difficultyMomentum - CONFIG.MOMENTUM_LOSS_WRONG;
-        // Check if we should decrease difficulty
-        // Requires momentum threshold (more lenient than increase)
-        if (newMomentum <= CONFIG.DIFFICULTY_DECREASE_THRESHOLD &&
+
+        // Update momentum + apply decay BEFORE threshold check
+        newMomentum = (currentState.difficultyMomentum - CONFIG.MOMENTUM_LOSS_WRONG) * (1 - CONFIG.MOMENTUM_DECAY);
+
+        // Decrease difficulty: 1 wrong is enough
+        if (newConsecutiveWrong >= CONFIG.WRONG_THRESHOLD &&
+            newMomentum <= CONFIG.DIFFICULTY_DECREASE_THRESHOLD &&
             currentDifficulty > CONFIG.MIN_DIFFICULTY) {
             newDifficulty = currentDifficulty - 1;
-            newMomentum = 0; // Reset momentum after difficulty change
-            newConsecutiveWrong = 0; // Reset consecutive counter
+            newMomentum = 0;
+            newConsecutiveWrong = 0;
         }
     }
-    // Apply momentum decay to prevent indefinite accumulation
-    newMomentum = newMomentum * (1 - CONFIG.MOMENTUM_DECAY);
-    // Clamp momentum to reasonable bounds
+
+    // Clamp momentum
     newMomentum = Math.max(-3, Math.min(3, newMomentum));
-    // Ensure difficulty is within bounds
+    // Clamp difficulty to [1, 10]
     newDifficulty = Math.max(CONFIG.MIN_DIFFICULTY, Math.min(CONFIG.MAX_DIFFICULTY, newDifficulty));
-    // Calculate score
+
     const accuracy = currentState.totalQuestions > 0
         ? currentState.correctAnswers / currentState.totalQuestions
         : 1.0;
-    const scoreDelta = calculateScoreDelta(currentDifficulty, currentState.streak, // Use old streak for scoring
-    isCorrect, accuracy);
-    return {
-        newDifficulty,
-        scoreDelta,
-        newStreak,
-        newMomentum,
-        newConsecutiveCorrect,
-        newConsecutiveWrong,
-    };
+
+    const scoreDelta = calculateScoreDelta(
+        currentDifficulty,
+        currentState.streak,
+        isCorrect,
+        accuracy
+    );
+
+    return { newDifficulty, scoreDelta, newStreak, newMomentum, newConsecutiveCorrect, newConsecutiveWrong };
 }
-/**
- * Check if user has been inactive and should have streak decay
- * Returns true if streak should be reset
- */
+
 function shouldDecayStreak(lastAnswerAt) {
-    if (!lastAnswerAt)
-        return false;
-    const INACTIVITY_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
+    if (!lastAnswerAt) return false;
+    const INACTIVITY_THRESHOLD_MS = 24 * 60 * 60 * 1000;
     const now = new Date();
-    const timeSinceLastAnswer = now.getTime() - new Date(lastAnswerAt).getTime();
-    return timeSinceLastAnswer > INACTIVITY_THRESHOLD_MS;
+    return (now.getTime() - new Date(lastAnswerAt).getTime()) > INACTIVITY_THRESHOLD_MS;
 }
-/**
- * Get difficulty range for question selection
- * Allows selecting from nearby difficulty levels for variety
- */
+
 function getDifficultyRange(targetDifficulty) {
-    const range = [];
-    // Primary difficulty
-    range.push(targetDifficulty);
-    // Add ±1 difficulty for variety (70% primary, 15% lower, 15% higher)
-    if (targetDifficulty > CONFIG.MIN_DIFFICULTY) {
-        range.push(targetDifficulty - 1);
-    }
-    if (targetDifficulty < CONFIG.MAX_DIFFICULTY) {
-        range.push(targetDifficulty + 1);
-    }
+    const range = [targetDifficulty];
+    if (targetDifficulty > CONFIG.MIN_DIFFICULTY) range.push(targetDifficulty - 1);
+    if (targetDifficulty < CONFIG.MAX_DIFFICULTY) range.push(targetDifficulty + 1);
     return range;
 }
-//# sourceMappingURL=adaptiveAlgorithm.js.map
