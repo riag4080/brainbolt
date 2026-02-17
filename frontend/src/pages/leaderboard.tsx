@@ -13,7 +13,7 @@ interface LeaderboardEntry {
 
 export default function Leaderboard() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'score' | 'streak'>('score');
   const [scoreLeaderboard, setScoreLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [streakLeaderboard, setStreakLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -59,18 +59,26 @@ export default function Leaderboard() {
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 dark:from-dark-bg dark:to-dark-surface py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Navigation */}
-        <div className="mb-6 flex gap-4">
+        <div className="mb-6 flex gap-4 items-center justify-between">
+          <div className="flex gap-4">
+            <button
+              onClick={() => router.push('/quiz')}
+              className="px-4 py-2 bg-white dark:bg-dark-surface rounded-lg shadow hover:shadow-md transition-shadow"
+            >
+              ← Back to Quiz
+            </button>
+            <button
+              onClick={() => router.push('/metrics')}
+              className="px-4 py-2 bg-white dark:bg-dark-surface rounded-lg shadow hover:shadow-md transition-shadow"
+            >
+              📊 My Metrics
+            </button>
+          </div>
           <button
-            onClick={() => router.push('/quiz')}
-            className="px-4 py-2 bg-white dark:bg-dark-surface rounded-lg shadow hover:shadow-md transition-shadow"
+            onClick={() => { logout(); router.push('/login'); }}
+            className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow font-semibold"
           >
-            ← Back to Quiz
-          </button>
-          <button
-            onClick={() => router.push('/metrics')}
-            className="px-4 py-2 bg-white dark:bg-dark-surface rounded-lg shadow hover:shadow-md transition-shadow"
-          >
-            📊 My Metrics
+            🚪 Logout
           </button>
         </div>
 
