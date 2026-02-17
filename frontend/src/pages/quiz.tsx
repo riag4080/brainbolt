@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '@/hooks/useAuth';
+import { useTheme } from './_app';
 import { quizAPI } from '@/lib/api';
 import { Question, AnswerResponse } from '@/types';
 
 export default function Quiz() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
   const [question, setQuestion] = useState<Question | null>(null);
   const [selectedAnswer, setSelectedAnswer] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -77,7 +79,15 @@ export default function Quiz() {
             </button>
           </div>
           <div className="flex items-center gap-3">
-            <span className="px-3 py-2 bg-white dark:bg-dark-surface rounded-lg shadow text-sm font-medium text-gray-700">
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="px-3 py-2 bg-white dark:bg-dark-surface rounded-lg shadow hover:shadow-md transition-all text-xl"
+              title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDark ? '☀️' : '🌙'}
+            </button>
+            <span className="px-3 py-2 bg-white dark:bg-dark-surface rounded-lg shadow text-sm font-medium text-gray-700 dark:text-dark-text">
               👤 {user?.username}
             </span>
             <button
